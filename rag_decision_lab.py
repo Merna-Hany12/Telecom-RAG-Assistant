@@ -65,7 +65,7 @@ def create_embeddings(chunks, model_name):
     # TODO: load model
     model = SentenceTransformer(model_name)
 
-    # 🔥 Handle E5 only
+    # Handle E5 only
     if "e5" in model_name:
         chunks = ["passage: " + c for c in chunks]
 
@@ -165,9 +165,6 @@ if __name__ == "__main__":
     all_chunks = []
     metadata = []
 
-    # -------------------------
-    # Load data
-    # -------------------------
     for file in os.listdir(DATA_PATH):
         if file.endswith(".md"):
 
@@ -184,24 +181,11 @@ if __name__ == "__main__":
 
     all_results = {}
 
-    # -------------------------
-    # Run models ONE BY ONE (memory safe)
-    # -------------------------
     for name, model_path in EMBEDDING_MODELS.items():
-
-        # -------------------------
-        # Embeddings
-        # -------------------------
         model, embeddings = create_embeddings(all_chunks, model_path)
 
-        # -------------------------
-        # Index
-        # -------------------------
-        index = build_faiss_index(embeddings)
 
-        # -------------------------
-        # Retrieval
-        # -------------------------
+        index = build_faiss_index(embeddings)
         results = retrieve(
             query=query,
             model=model,
@@ -219,7 +203,5 @@ if __name__ == "__main__":
         del index
         gc.collect()
 
-    # -------------------------
-    # Save HTML
-    # -------------------------
+
     save_results_html(all_results, query)
