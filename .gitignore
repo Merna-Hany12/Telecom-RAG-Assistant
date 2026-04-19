@@ -1,0 +1,12 @@
+# Ignore the data folder
+data/
+
+# Ignore the virtual environment
+venv/
+
+# Ignore VS Code workspace settings 
+.vscode/
+
+# Ignore any Python cache files
+__pycache__/
+*.pyc
