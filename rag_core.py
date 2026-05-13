@@ -28,39 +28,7 @@ MAX_HISTORY_TURNS = 6   # keep last 6 exchanges (12 messages) per session
 
 
 class RagCore:
-    """
-    Full NileTel RAG pipeline with per-session conversational memory.
 
-    Fixes applied (v2):
-    ─────────────────────────────────────────────────────────
-    FIX 1 — Memory content bug:
-        _generate_answer used to save the full context blob (retrieved docs +
-        query) as the user's history entry.  Now only the clean `query` string
-        is stored, so the history that gets replayed to the LLM is realistic
-        conversation turns, not giant walls of retrieval context.
-
-    FIX 2 — Ticket carries problem context:
-        When the user says "ارفع تذكرة" the router used to return a hardcoded
-        reply with zero problem detail.  Now the handler walks backwards
-        through the session history, finds the last user message that is NOT
-        itself a ticket request, and injects that as "المشكلة المسجلة" in both
-        the reply and the returned metadata.  The ticket details are also
-        exposed as `ticket_problem` in the response dict so the API / front-end
-        can store/log them.
-
-    FIX 3 — _route_query receives session_id:
-        Signature updated so the ticket handler can read history without a
-        second lookup.
-
-    Memory is stored in self.sessions[session_id] as a list of
-    {"role": "user"|"assistant", "content": "..."} dicts — exactly
-    the format Groq expects — and trimmed to MAX_HISTORY_TURNS pairs.
-
-    First run  → builds embeddings & FAISS index, saves to /cache  (~50 sec)
-    Later runs → loads from /cache, skips embedding step            (~2 sec)
-
-    If you update your .md files, call rag.clear_cache() then restart.
-    """
 
     GREETING_KEYWORDS: List[str] = [
         "ازيك", "ازيك؟", "ازيكو", "عامل إيه", "عامل ايه",
@@ -211,21 +179,18 @@ class RagCore:
 
         Step 2 — Inline detection (current query only).
                   Only use current_query as the problem source when the user
-                  wrote both problem AND ticket request in ONE message, e.g.:
-                      "النت بطيء اعملي تذكرة"
+   
                   Detected by: stripped current query still has a problem indicator.
 
         Step 3 — Fallback to current_query as-is.
 
-        This guarantees that follow-up messages like:
-            "مش شغال برده بطئ لسه طيب ابعت مهندس"
+
         never override the original detailed problem report sitting in history.
         """
         history = self._get_history(session_id)
 
         # ── Step 1: history OLDEST-FIRST ─────────────────────────────────────
-        # We want the FIRST message where the user described their problem,
-        # not the most recent follow-up like "لا لسه بطئ برده".
+
         for msg in history:
             if msg["role"] != "user":
                 continue
