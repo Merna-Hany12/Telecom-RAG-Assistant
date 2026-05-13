@@ -3,7 +3,8 @@ data/
 
 # Ignore the virtual environment
 venv/
-
+.venv/
+.env
 # Ignore VS Code workspace settings 
 .vscode/
 
